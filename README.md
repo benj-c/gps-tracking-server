@@ -24,7 +24,7 @@ Java and MongoDB based GPS object tracking server (TCP). This server can be used
  - Maven clean and build project.
  - Copy *gps* folder to */opt* directory.
  - Update *system.yml* file.
- - Run jar file names *GpsServer2-2.0.0*.
+ - Run jar file named *GpsServer2-2.0.0*.
  - Additionally it is possible to use *ubuntu upstart* config file to run as background service, for that,
    - Rename *GpsServer2-2.0.0-jar-with-dependencies.jar* into *GpsServer2.jar*.
    - Place this jar file on */opt* directory.
