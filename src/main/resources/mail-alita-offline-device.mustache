@@ -1,0 +1,31 @@
+
+<html>
+    <body>
+        <div style="font-family: sans-serif;border: 20px solid rgb(240, 240, 240);margin-left: 10%;margin-right: 10%;text-align: center;-moz-osx-font-smoothing: grayscale;-webkit-font-smoothing: antialiased;font-family: 'Helvetica Neue','Open Sans','Arial','sans-serif';">
+            <div style="margin: 0 auto"><img src="cid:{{cid}}"/></div>
+            <div>
+                <h1 style="padding:0;margin:0;font-weight:100;color:#333">Hello there !</h1>
+                <p style="color:#333">Offline devices</p>
+                <thead style="width:100%">
+                    <tr>
+                        <th>User</th>
+                        <th>Number</th>
+                        <th>SIM</th>
+                    </tr>
+                </thead>
+                <table style="width:100%">
+                    <tbody>
+                        {{#offlineDevices}}
+                        <tr>
+                            <td>{{user}}</td>
+                            <td>{{numberPlate}}</td>
+                            <td>{{trackerSimNumber}}</td>
+                        </tr>
+                        {{/offlineDevices}}
+                    </tbody>
+                </table>
+            </div>
+            <div style="padding: 5px;background-color: rgb(240, 240, 240);"><p style="color:#333">Have a nice day !<br><small>ALITA</small><br/><small>{{time}}</small></p></div>
+        </div>
+    </body>
+</html>

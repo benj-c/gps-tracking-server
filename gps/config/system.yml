@@ -1,0 +1,49 @@
+
+version: 1.2
+released: 180327
+db:
+    name: <database-name>
+    user: <database-username>
+    passwd: <database-password>
+    host: <database-host-ip>
+    port: <database-port>
+    url: mongodb://
+server:
+    host: localhost
+    port: <gps-server-port>
+    protocol: TCP
+    threads: 30
+    backlog: <tcp-backlog-queue-size>
+    messagingService: <true or false, to enable and disable email service>
+    requestLookupService: <true or false, to enable and disable offline device monitoring service>
+    requestLookupInterval: <timegap in milliseconds to run request lookup service, ex; 1200000>
+    messageQueueSize: 50
+    requestQueueSize: 100
+mail:
+    host: smtp.zoho.com
+    port: 465
+    contentType: html
+    contentCharset: US-ASCII
+    store_protocol: pop3
+    transport_protocol: smtp
+    socket_factory: javax.net.ssl.SSLSocketFactory
+    smtp_socket_factory_fallback: false
+    pop3_socket_factory_fallback: false
+    smtp_starttls: true
+    smtp_auth: true
+    smtp_debug: true
+    debug_auth: true
+    sender: <sender-name>
+    sender_id: <sender-email-id>
+    sender_passwd: <sender-password>
+    devs: <emails of developers, seperated by comma>
+    devsEnable: true
+    production: <emails of production users, seperated by comma>
+    production: false
+amp:
+    active: <true or false, to enable and disable ActiveMQ message publishing service>
+    protocol: tcp
+    host: <ActiveMQ broker host ip>
+    port: 61616
+    username: admin
+    passwd: admin
