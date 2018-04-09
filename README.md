@@ -26,7 +26,7 @@ Java and MongoDB based GPS object tracking server (TCP). This server can be used
  - Update *system.yml* file.
  - Run jar file named *GpsServer2-2.0.0*.
  - Additionally it is possible to use *ubuntu upstart* config file to run as background service, for that,
-   - Rename *GpsServer2-2.0.0-jar-with-dependencies.jar* into *GpsServer2.jar*.
+   - Rename *GpsServer2-2.0.0-jar-with-dependencies.jar* into *GpsServer.jar*.
    - Place this jar file on */opt* directory.
    - Place *gpsserver.conf* file on */etc/init* directiry, then start the service using *service gpsserver start*.
    - You can change this settings.
