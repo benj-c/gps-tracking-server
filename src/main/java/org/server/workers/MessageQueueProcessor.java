@@ -24,13 +24,17 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import org.server.Context.ExceptionLogger;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.server.dto.properties.EmailProperties;
 import org.server.dto.Message;
 import org.server.util.MailMessageUtil;
 import org.server.util.TimezoneUtil;
 
 public class MessageQueueProcessor implements Runnable {
+
+    private static final Logger ERROR_LOGGER = LogManager.getLogger("ErrorLog");
+    private static final Logger DEBUG_LOGGER = LogManager.getLogger("DebugLog");
 
     private final LinkedBlockingQueue<Message> mq;
     private final EmailProperties emailProperties;
@@ -87,9 +91,9 @@ public class MessageQueueProcessor implements Runnable {
                 }
             }
         } catch (AddressException ex) {
-            ExceptionLogger.error(ex, getClass(), TimezoneUtil.getUtcTime().toString());
+            ERROR_LOGGER.error(getLogMetaInfo(), ex);
         } catch (MessagingException | InterruptedException ex) {
-            ExceptionLogger.error(ex, getClass(), TimezoneUtil.getUtcTime().toString());
+            ERROR_LOGGER.error(getLogMetaInfo(), ex);
         }
     }
 
@@ -99,7 +103,7 @@ public class MessageQueueProcessor implements Runnable {
      * @param message
      * @param template
      */
-    private static final synchronized void sendEmail(
+    private static synchronized void sendEmail(
             final Message obj,
             final SMTPMessage smtpMessage,
             final EmailProperties emailProperties
@@ -131,8 +135,11 @@ public class MessageQueueProcessor implements Runnable {
 
             Transport.send(smtpMessage);
         } catch (MessagingException | IOException e) {
-            ExceptionLogger.error(e, MessageQueueProcessor.class, TimezoneUtil.getUtcTime().toString());
+            ERROR_LOGGER.error(getLogMetaInfo(), e);
         }
     }
 
+    private static String getLogMetaInfo() {
+        return TimezoneUtil.nowUtc() + " [MessageQueueProcessor.class]";
+    }
 }

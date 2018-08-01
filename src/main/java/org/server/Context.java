@@ -20,28 +20,34 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 import org.server.dto.properties.SystemProperties;
 import org.yaml.snakeyaml.Yaml;
 
 public class Context {
 
-    private static final String BASE_PATH = "/opt/gps";
+    private static final String BASE_PATH = "/opt/gs2";
     private static final String SYSTEM_PROPERTIES_PATH = BASE_PATH + "/config/system.yml";
-    private static final String LOGGER_CONFIG_FILE = BASE_PATH + "/config/log4j.properties";
     private static final String ALITA_SMILE = BASE_PATH + "/files/alita-cute.jpg";
     private static final String ALITA_SCARED = BASE_PATH + "/files/alita-scared.jpg";
 
     public static final String ALITA_FACE_SMILE = "sm";
     public static final String ALITA_FACE_SCARED = "sc";
 
-    private static final Logger EXCEPTION_LOGGER = LogManager.getLogger("ExceptionLog");
-
     private static SystemProperties SYSTEM_PROPERTIES;
 
     private Context() {
+    }
+
+    /**
+     *
+     */
+    public static void checkSysConfigs() throws IllegalStateException {
+        File externalSysConfigsFile = new File(SYSTEM_PROPERTIES_PATH);
+
+        if (!externalSysConfigsFile.exists() && !externalSysConfigsFile.canRead()) {
+            throw new IllegalStateException("System configuration file could not be found in path '" + SYSTEM_PROPERTIES_PATH + "'");
+        }
+
     }
 
     /**
@@ -73,68 +79,4 @@ public class Context {
         return Paths.get(ALITA_SCARED).toFile();
     }
 
-    /**
-     *
-     */
-    public static void configureLogger() {
-        PropertyConfigurator.configure(LOGGER_CONFIG_FILE);
-    }
-
-    /**
-     *
-     */
-    public static class ExceptionLogger {
-
-        private static final String STR_TIMESTAMP = "timestamp:";
-        private static final String STR_CLASS = ", Class:";
-        private static final String STR_MESSAGE = ", Message:";
-
-        private ExceptionLogger() {
-        }
-
-        /**
-         *
-         * @param exception
-         * @param c
-         * @param timestamp
-         */
-        public static synchronized void debug(Throwable exception, Class c, String timestamp) {
-            EXCEPTION_LOGGER.debug(new StringBuilder()
-                    .append(STR_TIMESTAMP).append(timestamp)
-                    .append(STR_CLASS).append(c.getName())
-                    .append(STR_MESSAGE).append(exception.getMessage()).toString(),
-                    exception
-            );
-        }
-
-        /**
-         *
-         * @param exception
-         * @param c
-         * @param timestamp
-         */
-        public static synchronized void error(Throwable exception, Class c, String timestamp) {
-            EXCEPTION_LOGGER.error(new StringBuilder()
-                    .append(STR_TIMESTAMP).append(timestamp)
-                    .append(STR_CLASS).append(c.getName())
-                    .append(STR_MESSAGE).append(exception.getMessage()).toString(),
-                    exception
-            );
-        }
-
-        /**
-         *
-         * @param exception
-         * @param c
-         * @param timestamp
-         */
-        public static synchronized void info(Throwable exception, Class c, String timestamp) {
-            EXCEPTION_LOGGER.info(new StringBuilder()
-                    .append(STR_TIMESTAMP).append(timestamp)
-                    .append(STR_CLASS).append(c.getName())
-                    .append(STR_MESSAGE).append(exception.getMessage()).toString(),
-                    exception
-            );
-        }
-    }
 }

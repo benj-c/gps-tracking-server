@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Benjamin.C.
+ * Copyright 2018 NULL.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,16 @@
 package org.server.dto;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 @Getter
 @Setter
-@Builder
-@ToString
-public final class Location {
+@AllArgsConstructor
+public class LastKnownLocationInfo {
 
-    private int type;
-    private long imei;
-    private List<Double> point;
-    private Double speed;
-    private LocalDateTime timestamp;
-    private Double heading;
-    private Double distance;
+    private LocalDateTime requestTimestamp;
+    private Double[] coordinates;
 
 }

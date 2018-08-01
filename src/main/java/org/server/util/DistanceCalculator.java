@@ -36,7 +36,11 @@ public final class DistanceCalculator {
             double lon1,
             double lat2,
             double lon2
-    ) {
+    ) throws IllegalArgumentException {
+        if (lat1 <= 0 || lon1 <= 0 || lat2 <= 0 || lon2 <= 0) {
+            throw new IllegalArgumentException("Longitude and latitude values cannot be 0s or negatives");
+        }
+
         double dlong = (lon2 - lon1) * DEG_TO_RAD;
         double dlat = (lat2 - lat1) * DEG_TO_RAD;
         double a
@@ -66,7 +70,11 @@ public final class DistanceCalculator {
             double lon1,
             double lat2,
             double lon2
-    ) {
+    ) throws IllegalArgumentException {
+        if (lat1 <= 0 || lon1 <= 0 || lat2 <= 0 || lon2 <= 0 || pointLat <= 0 || pointLon <= 0) {
+            throw new IllegalArgumentException("Longitude and latitude values cannot be 0s or negatives");
+        }
+
         double d0 = distance(pointLat, pointLon, lat1, lon1);
         double d1 = distance(lat1, lon1, lat2, lon2);
         double d2 = distance(lat2, lon2, pointLat, pointLon);

@@ -23,13 +23,16 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
-import org.server.Context.ExceptionLogger;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.server.dto.LastKnownLocationInfo;
 import org.server.dto.Message;
+import org.server.dto.properties.ServerProperties;
 import org.server.dto.properties.SystemProperties;
 import org.server.util.TimezoneUtil;
 import org.server.workers.MessageQueueProcessor;
@@ -39,6 +42,19 @@ import org.server.workers.InboundRequestHandlerEngine;
 
 public class ServerInitializer {
 
+    private static final Logger ERROR_LOGGER = LogManager.getLogger("ErrorLog");
+    private static final Logger DEBUG_LOGGER = LogManager.getLogger("DebugLog");
+
+    static {
+        try {
+            Context.checkSysConfigs();
+        } catch (IllegalStateException e) {
+            ERROR_LOGGER.error(getLogMetaInfo(), e);
+            ERROR_LOGGER.error("System exiting on error - 101");
+            System.exit(0);
+        }
+    }
+
     /**
      *
      * @param args
@@ -46,39 +62,39 @@ public class ServerInitializer {
     public static void main(String[] args) {
         LinkedBlockingQueue<String> requestQueue = null;
         LinkedBlockingQueue<Message> messageQueue = null;
-        ConcurrentHashMap<Long, Date> latestRequests = null;
+        ConcurrentHashMap<Long, LastKnownLocationInfo> latestRequests = null;
 
-        Context.configureLogger();
         try {
             SystemProperties systemProperties = Context.getSystemProperties();
-
             requestQueue = new LinkedBlockingQueue<>(systemProperties.getServer().getRequestQueueSize());
             messageQueue = new LinkedBlockingQueue<>(systemProperties.getServer().getMessageQueueSize());
             latestRequests = new ConcurrentHashMap<>();
             // initiate server
             new ServerInitializer().init(
-                    systemProperties.getServer().getPort(),
-                    systemProperties.getServer().getBacklog(),
+                    systemProperties.getServer(),
                     requestQueue,
                     messageQueue
             );
-            // initiate data stream consumer thread
-            Thread requestQueueProcessorEngine = new Thread(new RequestQueueProcessorEngine(
+            // initiate data stream consumer threadnew
+            RequestQueueProcessorEngine requestQueueProcessorEngine = new RequestQueueProcessorEngine(
                     requestQueue,
                     messageQueue,
                     latestRequests,
                     systemProperties.getAmp().isActive()
-            ));
-            requestQueueProcessorEngine.setName("requestQueueProcessorEngine");
-            requestQueueProcessorEngine.start();
+            );
+
+            Thread rqpeThread = new Thread(requestQueueProcessorEngine);
+            rqpeThread.setName("requestQueueProcessorEngine");
+            rqpeThread.start();
 
             // initiate event message excecution service thread
             if (systemProperties.getServer().isMessagingService()) {
-                Thread messageMessageQueueProcessorThread = new Thread(new MessageQueueProcessor(
+                MessageQueueProcessor messageQueueProcessor = new MessageQueueProcessor(
                         messageQueue,
                         systemProperties.getMail()
-                ));
-                messageMessageQueueProcessorThread.setName("messageMessageQueueProcessorThread");
+                );
+                Thread messageMessageQueueProcessorThread = new Thread(messageQueueProcessor);
+                messageMessageQueueProcessorThread.setName("messageQueueProcessorThread");
                 messageMessageQueueProcessorThread.start();
             }
 
@@ -97,29 +113,31 @@ public class ServerInitializer {
                 );
             }
 
+            DEBUG_LOGGER.debug("Service started - " + ManagementFactory.getRuntimeMXBean().getName());
             messageQueue.put(Message.getBuilder()
                     .type(Message.MessageType.SERVER_STARTUP)
                     .payload(Arrays.asList(
                             systemProperties.getServer().getServerAddress(),
                             systemProperties.getDb().getServerAddress()
-                    )).timestamp(TimezoneUtil.getGmtTime(TimezoneUtil.TIMEZONE_SL))
+                    )).timestamp(TimezoneUtil.nowLocal(TimezoneUtil.TIMEZONE_SL))
                     .build()
             );
-        } catch (IOException | InterruptedException | NumberFormatException ex) {
-            ExceptionLogger.error(ex, ServerInitializer.class, TimezoneUtil.getUtcTime().toString());
+        } catch (IOException | InterruptedException | NumberFormatException | IllegalStateException ex) {
+            ERROR_LOGGER.error(getLogMetaInfo(), ex);
             try {
                 if (null != messageQueue) {
                     messageQueue.put(Message.getBuilder()
                             .type(Message.MessageType.CRITICAL_SERVER_FAILURE)
                             .payload(ex)
-                            .timestamp(TimezoneUtil.getGmtTime(TimezoneUtil.TIMEZONE_SL))
+                            .timestamp(TimezoneUtil.nowLocal(TimezoneUtil.TIMEZONE_SL))
                             .build()
                     );
                 }
             } catch (InterruptedException ex1) {
-                ExceptionLogger.error(ex1, ServerInitializer.class, TimezoneUtil.getUtcTime().toString());
+                ERROR_LOGGER.error(getLogMetaInfo(), ex);
             }
         }
+
     }
 
     /**
@@ -131,10 +149,9 @@ public class ServerInitializer {
      * @throws java.io.InterruptedException
      */
     private void init(
-            int port,
-            int backlog,
-            LinkedBlockingQueue<String> queue,
-            LinkedBlockingQueue<Message> mq
+            final ServerProperties serverProperties,
+            final LinkedBlockingQueue<String> queue,
+            final LinkedBlockingQueue<Message> mq
     ) throws InterruptedException {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -148,10 +165,14 @@ public class ServerInitializer {
                         ch.pipeline().addLast(new InboundRequestHandlerEngine(queue, mq));
                     }
                 })
-                .option(ChannelOption.SO_BACKLOG, backlog)
+                .option(ChannelOption.SO_BACKLOG, serverProperties.getBacklog())
                 .childOption(ChannelOption.SO_KEEPALIVE, true);
 
         // Bind and start to accept incoming connections.
-        b.bind(port).sync();
+        b.bind(serverProperties.getPort()).sync();
+    }
+
+    private static String getLogMetaInfo() {
+        return TimezoneUtil.nowLocal("Asia/Colombo") + " [ServerInitializer.class]";
     }
 }

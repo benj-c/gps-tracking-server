@@ -85,7 +85,7 @@ public final class MailMessageUtil {
      * @param object
      * @return
      */
-    private static final String getEmailTemplateContent(final String templateUrl, final Object object) {
+    private static String getEmailTemplateContent(final String templateUrl, final Object object) {
         final StringWriter writer = new StringWriter();
         final Mustache compile = MUSTACHE_FACTORY.compile(templateUrl);
         compile.execute(writer, object);
@@ -141,11 +141,10 @@ public final class MailMessageUtil {
         final MimeBodyPart textPart = new MimeBodyPart();
         final long cid = System.currentTimeMillis();
 
-        final Throwable throwable = (Throwable) obj.getPayload();
         textPart.setText(
                 getEmailTemplateContent(
                         MailMessageUtil.EMAIL_SOS_TEMPLATE,
-                        new SosMessage(throwable.getLocalizedMessage(), throwable, cid, obj.getTimestamp())
+                        new SosMessage(obj.getMessage(), (Throwable) obj.getPayload(), cid, obj.getTimestamp())
                 ),
                 emailProperties.getContentCharset(),
                 emailProperties.getContentType()

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Benjamin.C.
+ * Copyright 2018 NULL.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.server.dto;
+package org.server.protocol;
 
-import java.time.LocalDateTime;
+import java.text.ParseException;
 import java.util.List;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import org.server.dto.Location;
 
-@Getter
-@Setter
-@Builder
-@ToString
-public final class Location {
+/**
+ *
+ * @author NULL
+ */
+public interface BaseProtocolDecoder {
 
-    private int type;
-    private long imei;
-    private List<Double> point;
-    private Double speed;
-    private LocalDateTime timestamp;
-    private Double heading;
-    private Double distance;
+    /**
+     *
+     * @param req
+     * @return
+     */
+    public boolean isValidRequest(String req);
 
+    /**
+     *
+     * @param request
+     * @return
+     * @throws ParseException
+     * @throws IllegalArgumentException
+     */
+    public List<Location> parseRequest(String request) throws
+            ParseException,
+            IllegalArgumentException;
 }

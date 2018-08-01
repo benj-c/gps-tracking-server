@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.TimeZone;
 
 public final class TimezoneUtil {
 
@@ -29,7 +30,7 @@ public final class TimezoneUtil {
      * @param timezone
      * @return
      */
-    public static final String getGmtTime(String timezone) {
+    public static final String nowLocal(String timezone) {
         return ZonedDateTime
                 .now()
                 .withZoneSameInstant(ZoneId.of(timezone))
@@ -41,7 +42,7 @@ public final class TimezoneUtil {
      *
      * @return
      */
-    public static final LocalDateTime getUtcTime() {
+    public static final LocalDateTime nowUtc() {
         return ZonedDateTime
                 .now()
                 .withZoneSameInstant(ZoneId.of("UTC"))
@@ -55,6 +56,6 @@ public final class TimezoneUtil {
      */
     public static final LocalDateTime getZonedTimestamp(String timezone) {
         return LocalDateTime
-                .parse(getGmtTime(timezone), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                .parse(nowLocal(timezone), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 }

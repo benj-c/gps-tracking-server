@@ -22,6 +22,8 @@ import com.mongodb.MongoException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import java.io.IOException;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import org.bson.Document;
@@ -29,10 +31,7 @@ import org.server.Context;
 import org.server.dto.Location;
 import org.server.dto.Vehicle;
 
-public final class DBOperationsHandler {
-
-    private DBOperationsHandler() {
-    }
+public class DBOperationsHandler implements DatabaseHandler {
 
     /**
      *
@@ -42,7 +41,8 @@ public final class DBOperationsHandler {
      * @throws ClassNotFoundException
      * @throws MongoException
      */
-    public static synchronized boolean insertCoodinates(Object decodedRequest) throws
+    @Override
+    public boolean insertCoodinates(Object decodedRequest) throws
             IOException,
             ClassNotFoundException,
             MongoException {
@@ -51,6 +51,7 @@ public final class DBOperationsHandler {
         }
 
         Location data = (Location) decodedRequest;
+        Date timestamp = Date.from(data.getTimestamp().atZone(ZoneId.systemDefault()).toInstant());
 
         MongoClient mongoClient = MongoConnection.getMongoClient();
         MongoCollection<Document> locationCollection = mongoClient
@@ -60,8 +61,9 @@ public final class DBOperationsHandler {
                 .append("point", data.getPoint())
                 .append("heading", data.getHeading())
                 .append("speed", data.getSpeed())
-                .append("timestamp", data.getTimestamp())
+                .append("timestamp", timestamp)
                 .append("consecutive_point_distance", data.getDistance());
+//        System.out.println(document.toJson());
         locationCollection.insertOne(document);
         return true;
     }
@@ -74,7 +76,8 @@ public final class DBOperationsHandler {
      * @throws java.lang.ClassNotFoundException
      * @throws MongoException
      */
-    public static synchronized double[] findLastLocation(long imei) throws
+    @Override
+    public double[] findLastLocation(long imei) throws
             IOException,
             ClassNotFoundException,
             MongoException {
@@ -107,7 +110,8 @@ public final class DBOperationsHandler {
      * @throws MongoException
      * @throws java.lang.ClassNotFoundException
      */
-    public static synchronized Vehicle getVehicle(long imei) throws
+    @Override
+    public Vehicle getVehicle(long imei) throws
             IOException,
             ClassNotFoundException,
             MongoException {
@@ -145,7 +149,8 @@ public final class DBOperationsHandler {
      * @throws ClassNotFoundException
      * @throws MongoException
      */
-    public static synchronized boolean retryDatabaseConnectivity() throws
+    @Override
+    public boolean retryDatabaseConnectivity() throws
             IOException,
             ClassNotFoundException,
             MongoException {

@@ -18,26 +18,31 @@ package org.server.workers;
 import com.mongodb.MongoException;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import javax.jms.JMSException;
-import org.server.Context.ExceptionLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.server.connection.ActiveMq;
 import org.server.db.DBOperationsHandler;
+import org.server.db.DatabaseHandler;
+import org.server.dto.LastKnownLocationInfo;
 import org.server.dto.Message;
 import org.server.dto.Vehicle;
-import org.server.parsers.Tk103Parser;
+import org.server.protocol.Tk103ProtocolDecoder;
 import org.server.util.TimezoneUtil;
 
 public final class RequestLookupEngine extends TimerTask {
 
-    private final ConcurrentHashMap<Long, Date> latestReqs;
+    private static final Logger ERROR_LOGGER = LogManager.getLogger("ErrorLog");
+    private static final Logger DEBUG_LOGGER = LogManager.getLogger("DebugLog");
+
+    private final DatabaseHandler databaseHandler = new DBOperationsHandler();
+    private final ConcurrentHashMap<Long, LastKnownLocationInfo> latestReqs;
     private final LinkedBlockingQueue<Message> mq;
     private final boolean ampActive;
 
@@ -49,7 +54,7 @@ public final class RequestLookupEngine extends TimerTask {
      */
     public RequestLookupEngine(
             LinkedBlockingQueue<Message> mq,
-            ConcurrentHashMap<Long, Date> latestReqs,
+            ConcurrentHashMap<Long, LastKnownLocationInfo> latestReqs,
             boolean ampActive
     ) {
         this.mq = mq;
@@ -61,7 +66,7 @@ public final class RequestLookupEngine extends TimerTask {
      *
      * @return
      */
-    private ConcurrentHashMap<Long, Date> getLatestRequestsQueue() {
+    private ConcurrentHashMap<Long, LastKnownLocationInfo> getLatestRequestsQueue() {
         return latestReqs;
     }
 
@@ -71,6 +76,14 @@ public final class RequestLookupEngine extends TimerTask {
      */
     private LinkedBlockingQueue<Message> getMessageQueue() {
         return mq;
+    }
+
+    /**
+     *
+     * @return
+     */
+    private DatabaseHandler getDatabaseHandler() {
+        return databaseHandler;
     }
 
     /**
@@ -91,21 +104,20 @@ public final class RequestLookupEngine extends TimerTask {
         //k - imei
         //v - time str
         getLatestRequestsQueue().forEach((k, v) -> {
-            LocalDateTime pre = LocalDateTime.ofInstant(v.toInstant(), ZoneId.of("Asia/Colombo"));
             LocalDateTime now = TimezoneUtil.getZonedTimestamp("Asia/Colombo");
-            long minutes = ChronoUnit.MINUTES.between(pre, now);
+            long minutes = ChronoUnit.MINUTES.between(v.getRequestTimestamp(), now);
 
             if (minutes > 20) {
                 try {
-                    Vehicle vehicle = DBOperationsHandler.getVehicle(k);
+                    Vehicle vehicle = getDatabaseHandler().getVehicle(k);
                     if (vehicle != null) {
                         offlineVehicles.add(vehicle);
                         if (isAmpActive()) {
-                            ActiveMq.sendMessage("REQSTATUS." + k, String.valueOf(Tk103Parser.DEVICE_OFFLINE));
+                            ActiveMq.sendMessage("REQSTATUS." + k, String.valueOf(Tk103ProtocolDecoder.DEVICE_OFFLINE));
                         }
                     }
                 } catch (IOException | ClassNotFoundException | JMSException | MongoException ex) {
-                    ExceptionLogger.error(ex, getClass(), TimezoneUtil.getUtcTime().toString());
+                    ERROR_LOGGER.error(getLogMetaInfo(), ex);
                 }
             }
         });
@@ -114,13 +126,17 @@ public final class RequestLookupEngine extends TimerTask {
                 getMessageQueue().put(Message.getBuilder()
                         .type(Message.MessageType.DEVICE_DOWN)
                         .message("")
-                        .timestamp(TimezoneUtil.getGmtTime(TimezoneUtil.TIMEZONE_SL))
+                        .timestamp(TimezoneUtil.nowLocal(TimezoneUtil.TIMEZONE_SL))
                         .payload(offlineVehicles)
                         .build()
                 );
             }
         } catch (InterruptedException ex) {
-            ExceptionLogger.error(ex, getClass(), TimezoneUtil.getUtcTime().toString());
+            ERROR_LOGGER.error(getLogMetaInfo(), ex);
         }
+    }
+
+    private static String getLogMetaInfo() {
+        return TimezoneUtil.nowUtc() + " [RequestLookupEngine.class]";
     }
 }
