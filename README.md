@@ -30,6 +30,3 @@ Java and MongoDB based GPS object tracking server (TCP). This server can be used
    - Place this jar file on */opt* directory.
    - Place *gpsserver.conf* file on */etc/init* directiry, then start the service using *service gpsserver start*.
    - You can change this settings.
-   
-   
-<a href="https://snyk.io/test/github/benj-c/gps-tracking-server?targetFile=pom.xml"><img src="https://snyk.io/test/github/benj-c/gps-tracking-server/badge.svg?targetFile=pom.xml" alt="Known Vulnerabilities" data-canonical-src="https://snyk.io/test/github/benj-c/gps-tracking-server?targetFile=pom.xml" style="max-width:100%;"></a>
